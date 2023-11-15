@@ -9,7 +9,7 @@ public class Main {
 
     public static void main(String[] args) {
         for (int i = 0; i < 100; i++) {
-            new Thread(() -> {
+            Thread thread = new Thread(() -> {
                 String str = generateRoute("RLRFR", 100);
                 int count = 0;
                 for (int j = 0; j < str.length(); j++) {
@@ -20,31 +20,28 @@ public class Main {
                     if (!sizeToFreq.containsKey(count)) sizeToFreq.put(count, 1);
                     else sizeToFreq.put(count, sizeToFreq.get(count) + 1);
                 }
-            }).start();
-        }
-        try {
-            Thread.sleep(300);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+            });
+            thread.start();
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
         }
         int max = 0;
         int keyMax = 0;
-        synchronized (sizeToFreq) {
-            for (Integer cnt : sizeToFreq.keySet()) {
-                if (sizeToFreq.get(cnt) > max) {
-                    max = sizeToFreq.get(cnt);
-                    keyMax = cnt;
-                }
+        for (Integer cnt : sizeToFreq.keySet()) {
+            if (sizeToFreq.get(cnt) > max) {
+                max = sizeToFreq.get(cnt);
+                keyMax = cnt;
             }
         }
-
         System.out.println("Самое частое количество повторений " + keyMax + " (встретилось " + max + " раз)");
         System.out.println("Другие размеры:");
-        synchronized (sizeToFreq) {
-            for (Integer cnt : sizeToFreq.keySet()) {
-                if (!(sizeToFreq.get(cnt) == keyMax))
-                    System.out.println("- " + cnt + "(" + sizeToFreq.get(cnt) + "раз)");
-            }
+        for (Integer cnt : sizeToFreq.keySet()) {
+            if (!(sizeToFreq.get(cnt) == keyMax))
+                System.out.println("- " + cnt + "(" + sizeToFreq.get(cnt) + "раз)");
         }
     }
 
