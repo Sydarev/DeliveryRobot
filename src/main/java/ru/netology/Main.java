@@ -8,6 +8,28 @@ public class Main {
     public static final Map<Integer, Integer> sizeToFreq = new HashMap<>();
 
     public static void main(String[] args) {
+        Thread checkThread = new Thread(() -> {
+            int max = 0;
+            int keyMax = 0;
+            while (!Thread.interrupted()) {
+                synchronized (sizeToFreq) {
+                    try {
+                        sizeToFreq.wait();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    for (int i : sizeToFreq.keySet())
+                        if (sizeToFreq.get(i) > max) {
+                            max = sizeToFreq.get(i);
+                            keyMax = i;
+                        }
+                }
+                System.out.println("Текущий лидер: " + keyMax + " - " + max);
+
+            }
+        });
+        checkThread.start();
+
         for (int i = 0; i < 100; i++) {
             Thread thread = new Thread(() -> {
                 String str = generateRoute("RLRFR", 100);
@@ -15,10 +37,11 @@ public class Main {
                 for (int j = 0; j < str.length(); j++) {
                     if (str.charAt(j) == 'R') count++;
                 }
-//                System.out.println("Число встреченных поворотов направо: " + count);
+                System.out.println("Число встреченных поворотов направо: " + count);
                 synchronized (sizeToFreq) {
                     if (!sizeToFreq.containsKey(count)) sizeToFreq.put(count, 1);
                     else sizeToFreq.put(count, sizeToFreq.get(count) + 1);
+                    sizeToFreq.notify();
                 }
             });
             thread.start();
@@ -29,19 +52,8 @@ public class Main {
             }
 
         }
-        int max = 0;
-        int keyMax = 0;
-        for (Integer cnt : sizeToFreq.keySet()) {
-            if (sizeToFreq.get(cnt) > max) {
-                max = sizeToFreq.get(cnt);
-                keyMax = cnt;
-            }
-        }
-        System.out.println("Самое частое количество повторений " + keyMax + " (встретилось " + max + " раз)");
-        System.out.println("Другие размеры:");
-        for (Integer cnt : sizeToFreq.keySet()) {
-            if (!(sizeToFreq.get(cnt) == keyMax))
-                System.out.println("- " + cnt + "(" + sizeToFreq.get(cnt) + "раз)");
+        while (checkThread.isAlive()) {
+            checkThread.interrupt();
         }
     }
 
