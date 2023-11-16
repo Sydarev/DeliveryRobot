@@ -3,12 +3,16 @@ package ru.netology;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class Main {
     public static final Map<Integer, Integer> sizeToFreq = new HashMap<>();
 
     public static void main(String[] args) {
-        Thread checkThread = new Thread(() -> {
+        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        executorService.submit(new Thread(() -> {
             int max = 0;
             int keyMax = 0;
             while (!Thread.interrupted()) {
@@ -23,15 +27,13 @@ public class Main {
                             max = sizeToFreq.get(i);
                             keyMax = i;
                         }
+                    System.out.println("Текущий лидер: " + keyMax + " - " + max);
                 }
-                System.out.println("Текущий лидер: " + keyMax + " - " + max);
-
             }
-        });
-        checkThread.start();
+        }));
 
         for (int i = 0; i < 100; i++) {
-            Thread thread = new Thread(() -> {
+            executorService.submit(new Thread(() -> {
                 String str = generateRoute("RLRFR", 100);
                 int count = 0;
                 for (int j = 0; j < str.length(); j++) {
@@ -43,18 +45,16 @@ public class Main {
                     else sizeToFreq.put(count, sizeToFreq.get(count) + 1);
                     sizeToFreq.notify();
                 }
-            });
-            thread.start();
+            }));
+        }
+        while (true) {
             try {
-                thread.join();
+                if (!executorService.awaitTermination(1, TimeUnit.MILLISECONDS)) break;
             } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                e.printStackTrace();
             }
-
         }
-        while (checkThread.isAlive()) {
-            checkThread.interrupt();
-        }
+        executorService.shutdownNow();
     }
 
     public static String generateRoute(String letters, int length) {
