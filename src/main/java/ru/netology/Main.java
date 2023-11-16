@@ -3,13 +3,17 @@ package ru.netology;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class Main {
     public static final Map<Integer, Integer> sizeToFreq = new HashMap<>();
 
     public static void main(String[] args) {
+        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         for (int i = 0; i < 100; i++) {
-            Thread thread = new Thread(() -> {
+            executorService.submit( new Thread(() -> {
                 String str = generateRoute("RLRFR", 100);
                 int count = 0;
                 for (int j = 0; j < str.length(); j++) {
@@ -20,15 +24,16 @@ public class Main {
                     if (!sizeToFreq.containsKey(count)) sizeToFreq.put(count, 1);
                     else sizeToFreq.put(count, sizeToFreq.get(count) + 1);
                 }
-            });
-            thread.start();
-            try {
-                thread.join();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+            }));
+            while(true) {
+                try {
+                    if (!executorService.awaitTermination(1, TimeUnit.MILLISECONDS)) break;
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
-
         }
+        executorService.shutdown();
         int max = 0;
         int keyMax = 0;
         for (Integer cnt : sizeToFreq.keySet()) {
