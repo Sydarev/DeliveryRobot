@@ -6,7 +6,6 @@ public class Main {
     public static final Map<Integer, Integer> sizeToFreq = new HashMap<>();
 
     public static void main(String[] args) {
-//        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         Thread checkThread = new Thread(() -> {
             int max = 0;
             int keyMax = 0;
@@ -15,7 +14,7 @@ public class Main {
                     try {
                         sizeToFreq.wait();
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        return;
                     }
                     for (int i : sizeToFreq.keySet())
                         if (sizeToFreq.get(i) > max) {
